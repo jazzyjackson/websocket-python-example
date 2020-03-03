@@ -1,0 +1,74 @@
+<!--
+    Grab screen resolution, check constants, create a "grid" of x, y, w/h
+    
+-->
+
+<head>
+    <meta charset="utf8">
+    <script src="./ctxify.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            padding: 0px;
+            margin: 0px;
+        }
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .latticework {
+            border: 1px solid black;
+            width: 50px;
+            height: 50px;
+            position: absolute;
+        }
+    </style>
+</head>
+<body>
+<script>
+
+function add_lattice(graph){
+    document.body.appendChild(ctxify(graph))
+}
+
+function build_lattice(event, size = 50, n_color = 0){
+    // iterate through existing lattice and remove everything
+    // an optimization would be to recalculate how many we have now...
+    Array.from(document.querySelectorAll('.latticework'), element => element.remove())
+    let {width, height} = document.body.getClientRects()[0] 
+
+    let n_columns = Math.ceil(width / size)
+    let n_rows = Math.ceil(height / size)
+
+    Array.from(new Array(n_columns), (_, column_index) => {
+        Array.from(new Array(n_rows), (_, row_index) => {
+            add_lattice(
+                {div: {
+                    class: "latticework",
+                    col: column_index,
+                    row: row_index,
+                    style: {
+                        left: column_index * size + 'px',
+                        top: row_index * size + 'px',
+                        background: (column_index + (row_index * n_columns)) < n_color ? "blue" : "white"
+                    }
+                }}
+            )
+        })
+    })
+}
+// should probably set a ms debounce to not redraw until it stops changing
+window.onresize = build_lattice
+document.onfullscreenchange = build_lattice
+document.onreadystatechange = build_lattice
+
+const sock = new WebSocket("ws://localhost:4000")
+sock.addEventListener("message", event => {
+    let time = Math.floor(event.data) % 60
+    console.log(time)
+    build_lattice(undefined, undefined, time)
+})
+
+</script>
+</body>
